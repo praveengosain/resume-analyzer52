@@ -45,7 +45,7 @@ function Home() {
                 <Upload className="size-4" /> Upload Resume
               </Button>
             </Link>
-            <Link to="/dashboard" search={{ demo: 1 } as never}>
+            <Link to="/dashboard">
               <Button size="lg" variant="outline" className="rounded-xl">
                 <PlayCircle className="size-4" /> Try Demo
               </Button>
