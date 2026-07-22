@@ -1,0 +1,272 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useState, useCallback, useRef } from "react";
+import { Upload, FileText, Sparkles, CheckCircle2, XCircle, Wand2, Mail, Download, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { Navbar } from "@/components/site/Navbar";
+import { Footer } from "@/components/site/Footer";
+import { ScoreRing } from "@/components/site/ScoreRing";
+import { analyze, SAMPLE_RESUME, SAMPLE_JD, type AnalysisResult } from "@/lib/analyze";
+
+export const Route = createFileRoute("/dashboard")({
+  head: () => ({
+    meta: [
+      { title: "Dashboard — MatchMaker.ai" },
+      { name: "description", content: "Analyze your resume against any job description. Get an instant ATS score, matching keywords, and AI rewrites." },
+      { property: "og:title", content: "Analyze your resume — MatchMaker.ai" },
+      { property: "og:description", content: "Instant ATS score, missing keywords, and AI-powered rewrites." },
+    ],
+  }),
+  component: Dashboard,
+});
+
+function Dashboard() {
+  const [resume, setResume] = useState("");
+  const [jd, setJd] = useState("");
+  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const readFile = useCallback((file: File) => {
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || "");
+      // naive: strip binary for pdf/docx; for demo, just extract printable ascii
+      const cleaned = text.replace(/[^\x20-\x7E\n]+/g, " ").replace(/\s+/g, " ").trim();
+      setResume(cleaned || `[Uploaded ${file.name}. Add sample text or use the demo to try analysis.]`);
+      toast.success(`Loaded ${file.name}`);
+    };
+    reader.readAsText(file);
+  }, []);
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragOver(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) readFile(f);
+  };
+
+  const loadDemo = () => {
+    setResume(SAMPLE_RESUME);
+    setJd(SAMPLE_JD);
+    setFileName("sample-resume.txt");
+    toast.info("Sample resume & JD loaded");
+  };
+
+  const runAnalyze = async () => {
+    if (!resume.trim() || !jd.trim()) {
+      toast.error("Add both a resume and a job description");
+      return;
+    }
+    setLoading(true);
+    setResult(null);
+    await new Promise((r) => setTimeout(r, 900));
+    setResult(analyze(resume, jd));
+    setLoading(false);
+    setTimeout(() => document.getElementById("results")?.scrollIntoView({ behavior: "smooth" }), 100);
+  };
+
+  return (
+    <div className="min-h-screen bg-hero">
+      <Navbar />
+      <main className="mx-auto max-w-7xl px-6 py-10 space-y-8">
+        <header className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">Resume Analyzer</h1>
+          <p className="text-muted-foreground">Upload your resume and paste the job description to get your ATS score.</p>
+        </header>
+
+        <div className="grid lg:grid-cols-2 gap-6">
+          <Card className="glass p-6 rounded-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold flex items-center gap-2"><FileText className="size-4 text-primary" /> Your Resume</h2>
+              <Button size="sm" variant="ghost" onClick={loadDemo}>Try Demo</Button>
+            </div>
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={onDrop}
+              onClick={() => inputRef.current?.click()}
+              className={`cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition ${
+                dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+              }`}
+            >
+              <div className="grid size-12 place-items-center mx-auto rounded-xl bg-gradient-brand text-white mb-3">
+                <Upload className="size-5" />
+              </div>
+              <p className="font-medium">Drag & drop your resume</p>
+              <p className="text-sm text-muted-foreground mt-1">PDF or DOCX — {fileName ?? "no file selected"}</p>
+              <input
+                ref={inputRef} type="file" accept=".pdf,.docx,.txt,.md" className="hidden"
+                onChange={(e) => e.target.files?.[0] && readFile(e.target.files[0])}
+              />
+            </div>
+            <Textarea
+              value={resume}
+              onChange={(e) => setResume(e.target.value)}
+              placeholder="…or paste your resume text here"
+              className="mt-4 min-h-40 rounded-xl"
+            />
+          </Card>
+
+          <Card className="glass p-6 rounded-2xl">
+            <h2 className="font-semibold flex items-center gap-2 mb-4"><Sparkles className="size-4 text-primary" /> Job Description</h2>
+            <Textarea
+              value={jd}
+              onChange={(e) => setJd(e.target.value)}
+              placeholder="Paste the full job description here…"
+              className="min-h-72 rounded-xl"
+            />
+            <p className="text-xs text-muted-foreground mt-2">Tip: include requirements, responsibilities, and preferred skills.</p>
+          </Card>
+        </div>
+
+        <div className="flex justify-center">
+          <Button
+            size="lg" onClick={runAnalyze} disabled={loading}
+            className="bg-gradient-brand text-white shadow-glow rounded-xl px-10 h-14 text-base"
+          >
+            {loading ? <><Loader2 className="size-5 animate-spin" /> Analyzing…</> : <><Sparkles className="size-5" /> Analyze Resume</>}
+          </Button>
+        </div>
+
+        {result && <Results result={result} />}
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+function Results({ result }: { result: AnalysisResult }) {
+  const b = result.breakdown;
+  const rows = [
+    ["Keywords", b.keywords.score, b.keywords.max],
+    ["Skills", b.skills.score, b.skills.max],
+    ["Experience", b.experience.score, b.experience.max],
+    ["Education", b.education.score, b.education.max],
+    ["Formatting", b.formatting.score, b.formatting.max],
+    ["Readability", b.readability.score, b.readability.max],
+  ] as const;
+
+  return (
+    <div id="results" className="space-y-6 animate-in fade-in duration-500">
+      <Card className="glass rounded-3xl p-8">
+        <div className="grid md:grid-cols-[auto_1fr] gap-8 items-center">
+          <ScoreRing score={result.score} size={200} />
+          <div className="grid sm:grid-cols-2 gap-3 w-full">
+            {rows.map(([label, v, max]) => (
+              <div key={label} className="rounded-xl bg-muted/40 p-4">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="font-medium">{label}</span>
+                  <span className="tabular-nums text-muted-foreground">{v}/{max}</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-brand rounded-full transition-all duration-700"
+                       style={{ width: `${(v / max) * 100}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="glass rounded-2xl p-6">
+          <h3 className="font-semibold mb-3">Missing Keywords</h3>
+          <div className="flex flex-wrap gap-1.5">
+            {result.missing.length ? result.missing.map((k) => (
+              <Badge key={k} variant="outline" className="border-destructive/40 text-destructive rounded-full">{k}</Badge>
+            )) : <p className="text-sm text-muted-foreground">Great — no critical keywords missing.</p>}
+          </div>
+        </Card>
+        <Card className="glass rounded-2xl p-6">
+          <h3 className="font-semibold mb-3">Matching Keywords</h3>
+          <div className="flex flex-wrap gap-1.5">
+            {result.matching.length ? result.matching.map((k) => (
+              <Badge key={k} className="bg-success/15 text-success border-0 rounded-full">{k}</Badge>
+            )) : <p className="text-sm text-muted-foreground">No JD keywords matched — try adding relevant experience.</p>}
+          </div>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="suggestions">
+        <TabsList className="grid grid-cols-4 max-w-2xl">
+          <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
+          <TabsTrigger value="formatting">Formatting</TabsTrigger>
+          <TabsTrigger value="skills">Skills</TabsTrigger>
+          <TabsTrigger value="experience">Experience</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="suggestions" className="mt-4">
+          <div className="grid md:grid-cols-2 gap-3">
+            {result.suggestions.map((s) => (
+              <Card key={s} className="glass rounded-xl p-4 flex gap-3">
+                <CheckCircle2 className="size-5 text-success shrink-0 mt-0.5" />
+                <p className="text-sm">{s}</p>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="formatting" className="mt-4">
+          <div className="grid sm:grid-cols-2 gap-3">
+            {result.formatting.map((f) => (
+              <div key={f.label} className="glass rounded-xl p-4 flex items-center gap-3">
+                {f.ok ? <CheckCircle2 className="size-5 text-success" /> : <XCircle className="size-5 text-destructive" />}
+                <span className="text-sm">{f.label}</span>
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="skills" className="mt-4 grid md:grid-cols-3 gap-4">
+          {[
+            ["Detected", result.skills.detected, "bg-success/15 text-success"],
+            ["Missing", result.skills.missing, "bg-destructive/15 text-destructive"],
+            ["Suggested", result.skills.suggested, "bg-primary/15 text-primary"],
+          ].map(([title, list, cls]) => (
+            <Card key={title as string} className="glass rounded-2xl p-6">
+              <h4 className="font-semibold mb-3">{title as string}</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {(list as string[]).length ? (list as string[]).map((s) => (
+                  <Badge key={s} className={`border-0 rounded-full ${cls}`}>{s}</Badge>
+                )) : <p className="text-xs text-muted-foreground">Nothing to show</p>}
+              </div>
+            </Card>
+          ))}
+        </TabsContent>
+
+        <TabsContent value="experience" className="mt-4">
+          <div className="grid md:grid-cols-2 gap-3">
+            {result.experience.map((e) => (
+              <div key={e.label} className="glass rounded-xl p-4 flex items-start gap-3">
+                {e.ok ? <CheckCircle2 className="size-5 text-success mt-0.5" /> : <XCircle className="size-5 text-destructive mt-0.5" />}
+                <div>
+                  <p className="text-sm font-medium">{e.label}</p>
+                  <p className="text-xs text-muted-foreground">{e.note}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      <div className="flex flex-wrap gap-3 justify-center pt-4">
+        <Button className="bg-gradient-brand text-white shadow-glow rounded-xl" onClick={() => toast.success("AI rewrite queued — upgrade to Pro to unlock")}>
+          <Wand2 className="size-4" /> Improve Resume with AI
+        </Button>
+        <Button variant="outline" className="rounded-xl" onClick={() => toast.success("Cover letter draft ready")}>
+          <Mail className="size-4" /> Generate Cover Letter
+        </Button>
+        <Button variant="outline" className="rounded-xl" onClick={() => toast.success("Report exported")}>
+          <Download className="size-4" /> Export PDF Report
+        </Button>
+      </div>
+    </div>
+  );
+}
