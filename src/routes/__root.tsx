@@ -79,11 +79,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "MatchMaker.ai — ATS Resume Score" },
-      { name: "description", content: "AI-powered ATS resume analyzer. Instant score, missing keywords, and rewrites." },
+      { title: "MatchMaker.ai — Increase Your Resume ATS Score" },
+      { name: "description", content: "Upload your resume, paste a job description, and instantly get an ATS score with AI-powered suggestions. Beat the applicant tracking system." },
       { name: "author", content: "MatchMaker.ai" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:title", content: "MatchMaker.ai — Increase Your Resume ATS Score" },
+      { name: "twitter:title", content: "MatchMaker.ai — Increase Your Resume ATS Score" },
+      { property: "og:description", content: "Upload your resume, paste a job description, and instantly get an ATS score with AI-powered suggestions. Beat the applicant tracking system." },
+      { name: "twitter:description", content: "Upload your resume, paste a job description, and instantly get an ATS score with AI-powered suggestions. Beat the applicant tracking system." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8d1a2159-44de-4f6b-a965-ef7165f8388f/id-preview-a8c84d3f--ef5ab04d-8736-4ba8-ba63-7ccce36c0095.lovable.app-1784708807585.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8d1a2159-44de-4f6b-a965-ef7165f8388f/id-preview-a8c84d3f--ef5ab04d-8736-4ba8-ba63-7ccce36c0095.lovable.app-1784708807585.png" },
     ],
     links: [
       {

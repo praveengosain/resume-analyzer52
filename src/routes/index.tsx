@@ -13,7 +13,7 @@ export const Route = createFileRoute("/")({
       { title: "MatchMaker.ai — Increase Your Resume ATS Score" },
       { name: "description", content: "Upload your resume, paste a job description, and instantly get an ATS score with AI-powered suggestions. Beat the applicant tracking system." },
       { property: "og:title", content: "MatchMaker.ai — Increase Your Resume ATS Score" },
-      { property: "og:description", content: "Instant AI ATS analysis, keyword matching, and resume rewrites that get callbacks." },
+      { property: "og:description", content: "Upload your resume, paste a job description, and instantly get an ATS score with AI-powered suggestions. Beat the applicant tracking system." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
