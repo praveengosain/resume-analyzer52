@@ -6,6 +6,14 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
@@ -31,6 +39,8 @@ function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [coverLetter, setCoverLetter] = useState("");
+  const [coverLetterOpen, setCoverLetterOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const readFile = useCallback(async (file: File) => {
@@ -92,6 +102,139 @@ function Dashboard() {
     setResult(analyze(resume, jd));
     setLoading(false);
     setTimeout(() => document.getElementById("results")?.scrollIntoView({ behavior: "smooth" }), 100);
+  };
+
+  const rewriteResume = (text: string) => {
+    const verbs: Array<[RegExp, string]> = [
+      [/\bmanage(?:d|r|ment)?\b/gi, "Managed"],
+      [/\blead(?:s|ing|er)?\b/gi, "Led"],
+      [/\bdevelop(?:ed|er|ing)?\b/gi, "Developed"],
+      [/\bbuild(?:s|ing|er)?\b/gi, "Built"],
+      [/\bdesign(?:ed|er|ing)?\b/gi, "Designed"],
+      [/\bimplement(?:ed|ing)?\b/gi, "Implemented"],
+      [/\boptimi[sz]e(?:d|r|ing)?\b/gi, "Optimized"],
+      [/\bsupport(?:ed|s|ing)?\b/gi, "Supported"],
+      [/\bcreate(?:d|s|ing)?\b/gi, "Created"],
+      [/\bmaintain(?:ed|s|ing)?\b/gi, "Maintained"],
+      [/\blaunch(?:ed|es|ing)?\b/gi, "Launched"],
+      [/\bcoordinate(?:d|s|ing)?\b/gi, "Coordinated"],
+      [/\bdrive(?:n|s|ing)?\b/gi, "Drove"],
+    ];
+
+    const lines = text.split(/\n+/).map((line) => {
+      let updated = line;
+      for (const [regex, replacement] of verbs) {
+        updated = updated.replace(regex, replacement);
+      }
+      return updated;
+    });
+
+    if (!/summary|profile/i.test(text)) {
+      lines.unshift(
+        "Experienced professional with a proven record of delivering measurable results through scalable web applications, strong collaboration, and technical leadership."
+      );
+    }
+
+    return lines.join("\n");
+  };
+
+  const createCoverLetter = (resumeText: string, jobDescription: string) => {
+    const nameMatch = resumeText.match(/^([A-Za-z]+)\b/);
+    const candidateName = nameMatch?.[1] ?? "Candidate";
+    const keywords = analyze(resumeText, jobDescription).matching.slice(0, 5);
+    const skillsLine = keywords.length ? keywords.join(", ") : "relevant technical skills";
+
+    return `Dear Hiring Manager,
+
+I am excited to apply for this opportunity. I bring experience working with ${skillsLine} and a strong history of delivering high-quality results for product teams.
+
+My resume demonstrates my ability to match the role’s requirements and contribute immediately through effective collaboration, communication, and technical ownership. I am confident I can help drive success for your team by applying my experience to the responsibilities outlined in the job description.
+
+Thank you for your time and consideration. I look forward to the opportunity to speak with you.
+
+Sincerely,
+${candidateName}`;
+  };
+
+  const handleImproveResume = () => {
+    if (!resume.trim()) {
+      toast.error("Add your resume first");
+      return;
+    }
+
+    const improved = rewriteResume(resume);
+    if (improved === resume) {
+      toast(`No improvements were needed`);
+      return;
+    }
+
+    setResume(improved);
+    toast.success("Resume improved");
+  };
+
+  const handleGenerateCoverLetter = () => {
+    if (!resume.trim() || !jd.trim()) {
+      toast.error("Add both a resume and a job description");
+      return;
+    }
+
+    const letter = createCoverLetter(resume, jd);
+    setCoverLetter(letter);
+    setCoverLetterOpen(true);
+    toast.success("Cover letter draft ready");
+  };
+
+  const handleExportPdf = async () => {
+    if (!result) {
+      toast.error("Analyze a resume first to export a report");
+      return;
+    }
+    try {
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF({ unit: "pt", format: "letter" });
+      const lineHeight = 18;
+      let y = 40;
+
+      const addText = (text: string | string[], options?: { x?: number; fontSize?: number }) => {
+        const x = options?.x ?? 40;
+        const fontSize = options?.fontSize ?? 12;
+        doc.setFontSize(fontSize);
+        const lines = Array.isArray(text) ? text : doc.splitTextToSize(text, 520);
+        lines.forEach((line) => {
+          if (y > 730) {
+            doc.addPage();
+            y = 40;
+          }
+          doc.text(line, x, y);
+          y += lineHeight;
+        });
+      };
+
+      addText("MatchMaker.ai Resume Report", { fontSize: 18 });
+      addText(`Score: ${result.score}`, { fontSize: 12 });
+      addText("Matching Keywords:", { fontSize: 12 });
+      addText(result.matching.length ? result.matching.join(", ") : "None", { x: 50 });
+      addText("Missing Keywords:", { fontSize: 12 });
+      addText(result.missing.length ? result.missing.join(", ") : "None", { x: 50 });
+      addText("Recommendations:", { fontSize: 12 });
+      addText(result.suggestions.length ? result.suggestions : ["No additional suggestions."], { x: 50 });
+      addText("", {});
+      addText("Section Scores:", { fontSize: 12 });
+      addText(`- Keywords: ${result.breakdown.keywords.score}/${result.breakdown.keywords.max}`);
+      addText(`- Skills: ${result.breakdown.skills.score}/${result.breakdown.skills.max}`);
+      addText(`- Experience: ${result.breakdown.experience.score}/${result.breakdown.experience.max}`);
+      addText(`- Education: ${result.breakdown.education.score}/${result.breakdown.education.max}`);
+      addText(`- Formatting: ${result.breakdown.formatting.score}/${result.breakdown.formatting.max}`);
+      addText(`- Readability: ${result.breakdown.readability.score}/${result.breakdown.readability.max}`);
+      addText("", {});
+      addText("Convert these notes into actionable resume updates to increase your ATS score.");
+
+      doc.save("matchmaker-resume-report.pdf");
+      toast.success("Report exported");
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not export PDF report");
+    }
   };
 
   return (
@@ -279,16 +422,45 @@ function Results({ result }: { result: AnalysisResult }) {
       </Tabs>
 
       <div className="flex flex-wrap gap-3 justify-center pt-4">
-        <Button className="bg-gradient-brand text-white shadow-glow rounded-xl" onClick={() => toast.success("AI rewrite queued — upgrade to Pro to unlock")}>
+        <Button className="bg-gradient-brand text-white shadow-glow rounded-xl" onClick={handleImproveResume}>
           <Wand2 className="size-4" /> Improve Resume with AI
         </Button>
-        <Button variant="outline" className="rounded-xl" onClick={() => toast.success("Cover letter draft ready")}>
+        <Button variant="outline" className="rounded-xl" onClick={handleGenerateCoverLetter}>
           <Mail className="size-4" /> Generate Cover Letter
         </Button>
-        <Button variant="outline" className="rounded-xl" onClick={() => toast.success("Report exported")}>
+        <Button variant="outline" className="rounded-xl" onClick={handleExportPdf}>
           <Download className="size-4" /> Export PDF Report
         </Button>
       </div>
+    </div>
+
+      <Dialog open={coverLetterOpen} onOpenChange={setCoverLetterOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cover Letter Draft</DialogTitle>
+            <DialogDescription>Review and copy the generated cover letter below.</DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={coverLetter}
+            readOnly
+            className="min-h-[260px] rounded-xl bg-slate-950/5"
+          />
+          <DialogFooter className="mt-4 gap-2">
+            <Button
+              type="button"
+              onClick={async () => {
+                await navigator.clipboard.writeText(coverLetter);
+                toast.success("Copied cover letter to clipboard");
+              }}
+            >
+              Copy to Clipboard
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setCoverLetterOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
