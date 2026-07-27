@@ -39,7 +39,7 @@ function Dashboard() {
     try {
       let text = "";
       if (name.endsWith(".docx")) {
-        const mammoth = await import("mammoth/mammoth.browser");
+        const mammoth: any = await import("mammoth/mammoth.browser");
         const arrayBuffer = await file.arrayBuffer();
         const res = await mammoth.extractRawText({ arrayBuffer });
         text = res.value;
