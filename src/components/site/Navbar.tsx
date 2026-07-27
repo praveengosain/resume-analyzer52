@@ -16,6 +16,7 @@ export function Navbar() {
           <Link to="/" className="hover:text-foreground">Home</Link>
           <Link to="/dashboard" className="hover:text-foreground">Dashboard</Link>
           <Link to="/pricing" className="hover:text-foreground">Pricing</Link>
+          <Link to="/terms" className="hover:text-foreground">Terms</Link>
         </nav>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
