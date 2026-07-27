@@ -12,4 +12,25 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: {
+    output: {
+      dir: "dist",
+      serverDir: "dist/server",
+      publicDir: "dist/client",
+    },
+  },
+  vite: {
+    environments: {
+      ssr: {
+        build: {
+          outDir: "dist/server",
+          rollupOptions: {
+            output: {
+              entryFileNames: "[name].js",
+            },
+          },
+        },
+      },
+    },
+  },
 });
