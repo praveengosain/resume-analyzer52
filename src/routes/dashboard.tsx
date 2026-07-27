@@ -33,17 +33,39 @@ function Dashboard() {
   const [fileName, setFileName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const readFile = useCallback((file: File) => {
+  const readFile = useCallback(async (file: File) => {
     setFileName(file.name);
-    const reader = new FileReader();
-    reader.onload = () => {
-      const text = String(reader.result || "");
-      // naive: strip binary for pdf/docx; for demo, just extract printable ascii
-      const cleaned = text.replace(/[^\x20-\x7E\n]+/g, " ").replace(/\s+/g, " ").trim();
-      setResume(cleaned || `[Uploaded ${file.name}. Add sample text or use the demo to try analysis.]`);
+    const name = file.name.toLowerCase();
+    try {
+      let text = "";
+      if (name.endsWith(".docx")) {
+        const mammoth: any = await import("mammoth/mammoth.browser");
+        const arrayBuffer = await file.arrayBuffer();
+        const res = await mammoth.extractRawText({ arrayBuffer });
+        text = res.value;
+      } else if (name.endsWith(".pdf")) {
+        const pdfjs: any = await import("pdfjs-dist");
+        const workerSrc = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+        pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+        const parts: string[] = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          parts.push(content.items.map((it: any) => it.str).join(" "));
+        }
+        text = parts.join("\n");
+      } else {
+        text = await file.text();
+      }
+      const cleaned = text.replace(/\r/g, "").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+      setResume(cleaned || `[Could not extract text from ${file.name}. Try pasting the content directly.]`);
       toast.success(`Loaded ${file.name}`);
-    };
-    reader.readAsText(file);
+    } catch (err) {
+      console.error(err);
+      toast.error(`Could not read ${file.name}. Try pasting the text instead.`);
+    }
   }, []);
 
   const onDrop = (e: React.DragEvent) => {
