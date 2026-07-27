@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { Moon, Sun, Sparkles } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
+import { Logo } from "@/components/site/Logo";
 
 export function Navbar() {
   const { theme, toggle } = useTheme();
@@ -9,10 +10,7 @@ export function Navbar() {
     <header className="sticky top-0 z-40 glass">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
         <Link to="/" className="flex items-center gap-2 font-semibold">
-          <span className="grid size-8 place-items-center rounded-lg bg-gradient-brand text-white shadow-glow">
-            <Sparkles className="size-4" />
-          </span>
-          <span className="text-lg tracking-tight">MatchMaker<span className="text-gradient-brand">.ai</span></span>
+          <Logo compact />
         </Link>
         <nav className="hidden gap-6 text-sm text-muted-foreground md:flex">
           <Link to="/" className="hover:text-foreground">Home</Link>

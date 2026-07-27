@@ -10,10 +10,10 @@ import { ScoreRing } from "@/components/site/ScoreRing";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "MatchMaker.ai — Increase Your Resume ATS Score" },
-      { name: "description", content: "Upload your resume, paste a job description, and instantly get an ATS score with AI-powered suggestions. Beat the applicant tracking system." },
-      { property: "og:title", content: "MatchMaker.ai — Increase Your Resume ATS Score" },
-      { property: "og:description", content: "Upload your resume, paste a job description, and instantly get an ATS score with AI-powered suggestions. Beat the applicant tracking system." },
+      { title: "PG Tech Help — Increase Your Resume ATS Score" },
+      { name: "description", content: "PG Tech Help analyzes your resume against any job description to deliver a higher ATS score with instant AI-backed improvements." },
+      { property: "og:title", content: "PG Tech Help — Increase Your Resume ATS Score" },
+      { property: "og:description", content: "PG Tech Help analyzes your resume against any job description to deliver a higher ATS score with instant AI-backed improvements." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -32,12 +32,11 @@ function Home() {
             <Sparkles className="size-3.5 text-primary" /> AI-powered ATS optimization
           </Badge>
           <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.05]">
-            Increase Your Resume{" "}
-            <span className="text-gradient-brand">ATS Score</span>
+            Turn your resume into a job-winning asset with
+            <span className="text-gradient-brand"> PG Tech Help</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl">
-            Upload your resume, paste the job description, and instantly receive an ATS score with
-            AI-powered suggestions tailored to the role you want.
+            Analyze your resume against any job description and get instant ATS feedback, keyword matching, and AI-crafted improvements designed to help you stand out.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link to="/dashboard">
@@ -74,8 +73,8 @@ function Home() {
       </section>
 
       <section className="mx-auto max-w-4xl px-6 py-24 text-center">
-        <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Ready to beat the ATS?</h2>
-        <p className="mt-3 text-muted-foreground">Get your first analysis in under 30 seconds.</p>
+        <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Ready to beat the ATS with PG Tech Help?</h2>
+        <p className="mt-3 text-muted-foreground">Get your first analysis in under 30 seconds and start applying with confidence.</p>
         <Link to="/dashboard">
           <Button size="lg" className="mt-6 bg-gradient-brand text-white shadow-glow rounded-xl">
             Analyze My Resume <ArrowRight className="size-4" />
