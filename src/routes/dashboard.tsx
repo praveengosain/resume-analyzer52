@@ -238,9 +238,10 @@ ${candidateName}`;
   };
 
   return (
-    <div className="min-h-screen bg-hero">
-      <Navbar />
-      <main className="mx-auto max-w-7xl px-6 py-10 space-y-8">
+    <>
+      <div className="min-h-screen bg-hero">
+        <Navbar />
+        <main className="mx-auto max-w-7xl px-6 py-10 space-y-8">
         <header className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Resume Analyzer</h1>
           <p className="text-muted-foreground">Upload your resume and paste the job description to get your ATS score.</p>
@@ -300,14 +301,41 @@ ${candidateName}`;
           </Button>
         </div>
 
-        {result && <Results result={result} />}
+        {result && (
+          <Results
+            result={result}
+            coverLetterOpen={coverLetterOpen}
+            coverLetter={coverLetter}
+            onCoverLetterOpenChange={setCoverLetterOpen}
+            onImproveResume={handleImproveResume}
+            onGenerateCoverLetter={handleGenerateCoverLetter}
+            onExportPdf={handleExportPdf}
+          />
+        )}
       </main>
       <Footer />
     </div>
+  </>
   );
 }
 
-function Results({ result }: { result: AnalysisResult }) {
+function Results({
+  result,
+  coverLetterOpen,
+  coverLetter,
+  onCoverLetterOpenChange,
+  onImproveResume,
+  onGenerateCoverLetter,
+  onExportPdf,
+}: {
+  result: AnalysisResult;
+  coverLetterOpen: boolean;
+  coverLetter: string;
+  onCoverLetterOpenChange: (open: boolean) => void;
+  onImproveResume: () => void;
+  onGenerateCoverLetter: () => void;
+  onExportPdf: () => Promise<void>;
+}) {
   const b = result.breakdown;
   const rows = [
     ["Keywords", b.keywords.score, b.keywords.max],
@@ -319,7 +347,8 @@ function Results({ result }: { result: AnalysisResult }) {
   ] as const;
 
   return (
-    <div id="results" className="space-y-6 animate-in fade-in duration-500">
+    <>
+      <div id="results" className="space-y-6 animate-in fade-in duration-500">
       <Card className="glass rounded-3xl p-8">
         <div className="grid md:grid-cols-[auto_1fr] gap-8 items-center">
           <ScoreRing score={result.score} size={200} />
@@ -435,32 +464,32 @@ function Results({ result }: { result: AnalysisResult }) {
     </div>
 
       <Dialog open={coverLetterOpen} onOpenChange={setCoverLetterOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cover Letter Draft</DialogTitle>
-            <DialogDescription>Review and copy the generated cover letter below.</DialogDescription>
-          </DialogHeader>
-          <Textarea
-            value={coverLetter}
-            readOnly
-            className="min-h-[260px] rounded-xl bg-slate-950/5"
-          />
-          <DialogFooter className="mt-4 gap-2">
-            <Button
-              type="button"
-              onClick={async () => {
-                await navigator.clipboard.writeText(coverLetter);
-                toast.success("Copied cover letter to clipboard");
-              }}
-            >
-              Copy to Clipboard
-            </Button>
-            <Button type="button" variant="secondary" onClick={() => setCoverLetterOpen(false)}>
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Cover Letter Draft</DialogTitle>
+              <DialogDescription>Review and copy the generated cover letter below.</DialogDescription>
+            </DialogHeader>
+            <Textarea
+              value={coverLetter}
+              readOnly
+              className="min-h-[260px] rounded-xl bg-slate-950/5"
+            />
+            <DialogFooter className="mt-4 gap-2">
+              <Button
+                type="button"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(coverLetter);
+                  toast.success("Copied cover letter to clipboard");
+                }}
+              >
+                Copy to Clipboard
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => onCoverLetterOpenChange(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+    </>
   );
 }
